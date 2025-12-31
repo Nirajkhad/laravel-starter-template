@@ -1,0 +1,52 @@
+# Git
+.git
+.gitignore
+.gitattributes
+
+# IDE
+.vscode
+.idea
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Docker
+docker-compose*.yml
+.dockerignore
+
+# Node
+node_modules
+npm-debug.log
+yarn-error.log
+
+# Laravel
+.env.local
+.env.*.local
+storage/logs/*
+bootstrap/cache/*
+storage/framework/sessions/*
+storage/framework/views/*
+storage/framework/cache/*
+
+# Testing
+tests
+phpunit.xml
+
+# Build artifacts
+dist
+build
+.turbo
+
+# Documentation
+docs
+*.md
+
+# Package managers
+composer.lock
+package-lock.json
+yarn.lock
+
+# Temporary
+*.tmp
+.cache
