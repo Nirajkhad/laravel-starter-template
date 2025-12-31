@@ -35,39 +35,36 @@ A fully optimized Laravel 12 development environment with Docker, PostgreSQL, Re
 ### Quick Access
 
 ```bash
-# Open app in browser (requires Linux/Mac)
-./app open
-
 # Enter container shell
-./app.cli
+./app-cli.sh
 
 # Run any command in container
-./app php artisan make:model User
-./app composer require package-name
-./app php -v
+docker compose exec app php artisan make:model User
+docker compose exec app composer require package-name
+docker compose exec app php -v
 ```
 
 ### Database
 
 ```bash
-./app php artisan migrate              # Run migrations
-./app php artisan migrate:fresh        # Reset database
-./app php artisan db:seed              # Seed database
-./app php artisan tinker               # Open PHP REPL
+docker compose exec app php artisan migrate              # Run migrations
+docker compose exec app php artisan migrate:fresh        # Reset database
+docker compose exec app php artisan db:seed              # Seed database
+docker compose exec app php artisan tinker               # Open PHP REPL
 ```
 
 ### Cache & Queue
 
 ```bash
-./app php artisan optimize:clear       # Clear cache
-./app php artisan queue:work           # Start queue worker
+docker compose exec app php artisan optimize:clear       # Clear cache
+docker compose exec app php artisan queue:work           # Start queue worker
 ```
 
 ### Testing
 
 ```bash
-./app php artisan test                 # Run tests
-./app ./vendor/bin/pint                # Code formatting (Pint)
+docker compose exec app php artisan test                 # Run tests
+docker compose exec app ./vendor/bin/pint                # Code formatting (Pint)
 ```
 
 ### Docker Management
@@ -275,7 +272,7 @@ docker compose logs -f app
 1. Update `.env` with production values
 2. Set `APP_ENV=production`
 3. Set `APP_DEBUG=false`
-4. Generate app key: `./app php artisan key:generate`
+4. Generate app key: `docker compose exec app php artisan key:generate`
 5. Rebuild image without development dependencies
 6. Use secrets management instead of plain text .env
 
@@ -304,15 +301,15 @@ This project is open-sourced software licensed under the MIT license.
 
 1. Create a feature branch
 2. Make your changes
-3. Run tests: `./app php artisan test`
-4. Format code: `./app ./vendor/bin/pint`
+3. Run tests: `docker compose exec app php artisan test`
+4. Format code: `docker compose exec app ./vendor/bin/pint`
 5. Submit a pull request
 
 ## ⚡ Performance Tips
 
 -   Use `docker compose up -d` for background operation
 -   Enable Docker Desktop resource limits to prevent slowdown
--   Regular `./app composer install` to keep dependencies current
+-   Regular `docker compose exec app composer install` to keep dependencies current
 -   Use Redis for caching instead of file caching
 -   Monitor logs with `docker compose logs -f app`
 
@@ -324,32 +321,3 @@ For issues or questions:
 2. Review container logs
 3. Ensure all services are healthy: `docker compose ps`
 4. Verify environment variables in `.env`
-
-We would like to extend our thanks to the following sponsors for funding Laravel development. If you are interested in becoming a sponsor, please visit the [Laravel Partners program](https://partners.laravel.com).
-
-### Premium Partners
-
--   **[Vehikl](https://vehikl.com)**
--   **[Tighten Co.](https://tighten.co)**
--   **[Kirschbaum Development Group](https://kirschbaumdevelopment.com)**
--   **[64 Robots](https://64robots.com)**
--   **[Curotec](https://www.curotec.com/services/technologies/laravel)**
--   **[DevSquad](https://devsquad.com/hire-laravel-developers)**
--   **[Redberry](https://redberry.international/laravel-development)**
--   **[Active Logic](https://activelogic.com)**
-
-## Contributing
-
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
-
-## Code of Conduct
-
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
-
-## Security Vulnerabilities
-
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
-
-## License
-
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
