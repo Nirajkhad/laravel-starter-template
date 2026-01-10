@@ -1,83 +1,94 @@
+x-queue-base: &queue-base
+  build:
+    context: .
+    dockerfile: .docker/Dockerfile
+    args:
+      HOST_UID: ${HOST_UID}
+      HOST_GID: ${HOST_GID}
+  volumes:
+    - .:/var/www/html
+  env_file:
+    - .env
+  environment:
+    RUN_APP_SETUP: "false"
+  depends_on:
+    - redis
+    - postgres
+  restart: unless-stopped
+  networks:
+    - laravel_network
+
 services:
+  ####################################
+  # App (Octane)
+  ####################################
   app:
-    build:
-      context: .
-      dockerfile: .docker/Dockerfile
-    container_name: laravel_app
-    env_file:
-      - .env
+    <<: *queue-base
     environment:
-      - WEB_DOCUMENT_ROOT=/var/www/html/public
-    depends_on:
-      postgres:
-        condition: service_healthy
-      redis:
-        condition: service_healthy
+      RUN_APP_SETUP: "true"
+    command: >
+      php artisan octane:start
+      --server=frankenphp
+      --host=0.0.0.0
+      --port=8080
+      --watch
     ports:
-      - "8000:80"
+      - "8000:8080"
     volumes:
       - .:/var/www/html
-    networks:
-      - laravel_network
-    restart: unless-stopped
+      - caddy_data:/data
+      - caddy_config:/config
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:80/"]
-      interval: 10s
-      timeout: 5s
-      retries: 3
-      start_period: 30s
-    deploy:
-      resources:
-        limits:
-          cpus: "2"
-          memory: 1G
-        reservations:
-          cpus: "1"
-          memory: 512M
+      test: ["CMD", "healthcheck-octane"]
+      start_period: 10s
 
+  ####################################
+  # Scheduler
+  ####################################
+  scheduler:
+    <<: *queue-base
+    command: scheduler
+    environment:
+      RUN_APP_SETUP: "false"
+
+  ####################################
+  # Queue Workers
+  ####################################
+  queue-default:
+    <<: *queue-base
+    command: >
+      php artisan queue:work redis
+      --queue=default
+      --sleep=3
+      --tries=3
+      --timeout=90
+      --max-time=3600
+    environment:
+      RUN_APP_SETUP: "false"
+
+  ####################################
+  # Infrastructure
+  ####################################
   postgres:
     image: postgres:16-alpine
-    container_name: laravel_postgres
-    restart: unless-stopped
     environment:
       POSTGRES_DB: laravel
       POSTGRES_USER: laravel
       POSTGRES_PASSWORD: secret
     volumes:
       - pgdata:/var/lib/postgresql/data
-    ports:
-      - "5432:5432"
     networks:
       - laravel_network
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U laravel"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-      start_period: 10s
 
   redis:
     image: redis:7-alpine
-    container_name: laravel_redis
-    restart: unless-stopped
-    command: redis-server --appendonly yes
-    ports:
-      - "6379:6379"
     volumes:
       - redisdata:/data
     networks:
       - laravel_network
-    healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-      start_period: 10s
 
   mailpit:
-    image: axllent/mailpit:latest
-    container_name: mailpit
-    restart: unless-stopped
+    image: axllent/mailpit
     ports:
       - "8025:8025"
       - "1025:1025"
@@ -87,7 +98,8 @@ services:
 volumes:
   pgdata:
   redisdata:
+  caddy_data:
+  caddy_config:
 
 networks:
   laravel_network:
-    driver: bridge

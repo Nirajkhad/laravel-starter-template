@@ -1,29 +1,48 @@
-FROM webdevops/php-nginx:8.4
+########################################
+# FrankenPHP + Laravel Octane
+########################################
+FROM serversideup/php:8.5-frankenphp
 
-# Set labels for metadata
-LABEL maintainer="Laravel Dev Team"
-LABEL description="Laravel Starter Template with PHP 8.4, Nginx, and PostgreSQL"
+ARG HOST_UID=1000
+ARG HOST_GID=1000
 
-# Environment variables
-ENV WEB_DOCUMENT_ROOT=/var/www/html/public \
-    PHP_MEMORY_LIMIT=512M \
-    PHP_MAX_UPLOAD_SIZE=50M
+########################################
+# Root only for setup
+########################################
+USER root
 
+# Align www-data UID/GID with host
+RUN docker-php-serversideup-set-id www-data ${HOST_UID}:${HOST_GID}
+
+# REQUIRED for Caddy (FrankenPHP)
+RUN mkdir -p /data/caddy /config/caddy \
+ && chown -R ${HOST_UID}:${HOST_GID} /data /config
+
+# Laravel-required PHP extensions
+RUN install-php-extensions \
+    pdo_mysql \
+    redis \
+    zip \
+    bcmath \
+    intl
+
+RUN mkdir -p  /var/www/html \
+ && chown -R ${HOST_UID}:${HOST_GID}  /var/www/html
+
+
+########################################
+# App directory
+########################################
 WORKDIR /var/www/html
 
-# Copy and setup startup script before application code (layer caching)
-COPY .docker/startup.sh /opt/docker/provision/entrypoint.d/99-laravel-init.sh
-RUN chmod +x /opt/docker/provision/entrypoint.d/99-laravel-init.sh
+########################################
+# Startup and Scheduler scripts
+########################################
+COPY --chmod=755 .docker/scripts/startup.sh /etc/entrypoint.d/
+COPY --chmod=755 .docker/scripts/scheduler.sh /usr/local/bin/scheduler
 
-# Copy application
-COPY . /var/www/html
 
-# Set file permissions for critical directories only
-RUN chown -R 1001:1001 /opt/docker && \
-    chmod -R 755 /opt/docker && \
-    chown -R 1001:1001 /var/www/html/storage /var/www/html/bootstrap/cache 2>/dev/null || true
-
-EXPOSE 80
-
-HEALTHCHECK --interval=10s --timeout=5s --retries=3 --start-period=30s \
-    CMD curl -f http://localhost:80/ || exit 1
+########################################
+# Drop privileges
+########################################
+USER ${HOST_UID}:${HOST_GID}
